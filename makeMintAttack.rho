@@ -1,0 +1,36 @@
+// Intercept makemint functions
+// should work on known/forgable, unprotected mint (or whatever) contract
+// Defense :: only expose io:write name
+
+new internalReturn in {
+    // intercept an invocation of "MakeMint"
+    for (interceptedReturn <- @"MakeMint") {
+        match internalReturn == interceptedReturn {
+            true => {@"MakeMint"!(interceptedReturn)} // can randomly intercept own interception.  try again.
+            false => {
+                // legitimate interception, ftw
+
+                // actually invoke MakeMint function
+                @"MakeMint"!(*internalReturn)
+                | for (@mint <- internalReturn) {
+                    // now you have a backdoor access to *mint
+
+                    // send mint to original invoker
+                    interceptedReturn!(mint)
+
+                    | new makeIllicitWallet in {
+                        @[mint, "makePurse"](1000, *makeIllicitWallet) {
+                            for (@illicitWallet <- makeIllicitWallet) {
+                                // illicit wallet created.  go buy drugs|speedboats|unicorns, or whatever
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+    }
+}
+
+
+

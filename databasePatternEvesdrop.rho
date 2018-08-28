@@ -1,0 +1,65 @@
+
+/*
+    The new rholangtut.md introduces pattern matching as an interface pattern.
+    The example given imagines this being used to store a database of people, as follows:
+*/
+new people, stdout(`rho:io:stdout`) in {
+    people!(@"name"!("Joe") | @"age"!(20) | @"eyes"!("blue") | @"seq"!(0)) |
+    people!(@"name"!("Julie") | @"age"!(30) | @"eyes"!("brown") | @"seq"!(0)) |
+    people!(@"name"!("Jane") | @"age"!(40) | @"eyes"!("green") | @"seq"!(0)) |
+    people!(@"name"!("Jack") | @"age"!(50) | @"eyes"!("grey") | @"seq"!(0))|
+    for (@{@"seq"!(0) | {row /\ {@"name"!(name) | @"age"!(age) | _}}} <= people) {
+        if (age > 35) {
+        stdout!([name, age])
+    } |
+        people!(row | @"seq"!(1))
+    }
+}
+
+
+// Looks like a useful pattern -- let's use it to create a registry of purses
+
+// assume that all these purses are purse-projections of cannonical mint process
+
+new stdout(`rho:io:stdout`){
+    new goldPurse, silverPurse, leadPurse, diamondPurse in {
+        
+
+        new registry in {
+            registry!(@"name"!("gold") | @"purse"!!(*goldPurse))
+            | registry!(@"name"!("silver") | @"purse"!!(*silverPurse))
+            | registry!(@"name"!("lead") | @"purse"!!(*leadPurse))
+            | registry!(@"name"!("diamond") | @"purse"!!(*diamondPurse))
+
+            // print out rows
+            for(@{registration /\ {@"name"!(name) | @"purse"!(purse)}} <= registry) {
+                stdout!(["Registered purse", name])
+            }
+        }
+    }
+
+    // Can eavesdrop from without the scope to retrieve the purses
+
+    for (@purse <= @"purse") {
+        stdout!(purse)
+    }
+
+
+    // to defend against this, construct "argument names" that are a composition of a known name and a forgable interface
+
+    new protectedRegistry in {
+        
+        protectedRegistry!(@{*protectedRegistry | "name"}!("gold") | @{*protectedRegistry | "purse"}!!(*goldPurse))
+        | protectedRegistry!(@{*protectedRegistry | "name"}!("silver") | @{*protectedRegistry | "purse"}!!(*silverPurse))
+        | protectedRegistry!(@{*protectedRegistry | "name"}!("lead") | @{*protectedRegistry | "purse"}!!(*leadPurse))
+        | protectedRegistry!(@{*protectedRegistry | "name"}!("diamond") | @{*protectedRegistry | "purse"}!!(*diamondPurse))
+
+        // print out rows
+        for(@{registration /\ {@{*protectedRegistry | "name"}!(name) | @{*protectedRegistry | "purse"}!(purse)}} <= protectedRegistry) {
+            stdout!(["Registered purse", name])
+        }
+    }
+
+    // now evesdropper cannot intercept messages, but the interface retains usability aspect of having a clear interface.
+
+}

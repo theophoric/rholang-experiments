@@ -1,0 +1,85 @@
+// BottomlessPurse wraps a purse instance and proxies the 
+new BottomlessPurse in {
+    contract BottomlessPurse(purse, return) = {
+        new bPurse, bDecr in {
+
+            // Wrapped "*decr" method always returns true, does not reduce underlying purse balance
+            contract @[*bPurse, *bDecr](_, sucess) = {
+                success!(true)
+            }
+
+            // Wrapped "getDecr" method intercepts challenge-response and returns the wrapped *bDecr process.
+            | contract @[*bPurse, "getDecr"](return) = {
+                new getChallenge in {
+                    @[*purse, "getDecr"]!(*getChallenge)
+                    | for (@[challenge, responseCh] <- getChallenge) {
+                        new interceptResponse, validateAnswer in {
+                            return!([challenge, *interceptResponse])
+                            | for (@[answer, answerCh] <- interceptResponse) {
+                                responseCh!(answer, *validateAnswer)
+                                | for (@validation <- validateAnswer) {
+                                    match validation with {
+                                        [_, _] => { @answerCh!([*bPurse, *bDecr]) }
+                                        [] => { @answerCh!([]) }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // ALTERNATIVELY --> the check is only one-way and assumes a legit challenger.
+
+            // Wrapped "split" creates a new purse with any specified balance
+            // invokes "sprout" to create a new BottomlessPurse instance and then invokes "add" to this instance
+            | contract @[*bPurse, "split"](@amount, return) = {
+                new getNewPurse in {
+                    // invoke bPurse.sprout to create a new BottomlessPurse
+                    // deposit amount from and to new bPurse
+
+                    @[*bPurse, "sprout"]!(*getNewBPurse)
+                    | for (@newBPurse <- getNewBPurse) {
+                        new response in {
+                            @[newBPurse, "deposit"](amount, newBPurse, *response)
+                            for(@success <- response) {
+                                match success with {
+                                    // return new bPurse
+                                    [true] => {return!(newBPurse)}
+                                    [] => {return!()}
+                                }
+                            }
+                        }                        
+                    }
+                }
+            }
+
+            // Wapped "deposit" method is proxied through to underlying purse
+            | contract @[*bPurse, "deposit"](@amount, @src, success) = {
+                @[*purse, "deposit"]!(amount, src, *success)
+            }
+
+            // Wrapped "getBalance" method is proxied through to underlying purse
+            | contract @[*bPurse, "getBalance"](return) = {
+              @[*purse, "getBalance"]!(*return)
+            }
+
+            // Wrapped "sprout" method returns a  BottomlessPurse instance
+            | contract @[*bPurse, "sprout"](return) = {
+                new getSproutPurse in {
+                    @[*purse, "sprout"]!(*getSproutPurse)
+                    | for (@sproutPurse <- getSproutPurse) {
+                        BottomlessPurse(sproutPurse, *return)
+                    }
+                }
+            }
+
+            // New "Add" method -- shorthand for deposit from self into self
+            // | contract @[*bPurse, "add"](@amount, success) = {
+            //     @[*bPurse, "deposit"]!(amount, *bPurse, *success)
+            // }
+            
+            | return!(*bPurse)
+        }
+    }
+}

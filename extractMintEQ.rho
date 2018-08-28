@@ -1,0 +1,15 @@
+
+// Returns bundle0{*thisMint} for any given purse
+new extractMintEQ(purse, return) = {
+    new mockPurse, fingerprint in {
+        contract @[*mockPurse, "getDecr"](_return) = {
+            new response in {
+                _return!([Nil, *response])
+                | for (@[mintEQ, _] <- response) {
+                    return!(mintEQ)
+                }
+            }
+        }
+        | @[*purse, "deposit"]!(0, *mockPurse, Nil)
+    }
+}

