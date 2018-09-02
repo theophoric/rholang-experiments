@@ -1,0 +1,34 @@
+contract Constructor(@init, c) = {
+    new object, 
+        privateMethod,
+        getExport, getPrivateVariable,
+        privateFunction
+    in {
+
+        // set getters / "variables"
+        // export object is write-only interface channel
+        getExport!!(bundle+{*object})
+        | match init with {
+            ["initVariable", privateVariable] => { getPrivateVariable!(privateVariable)}
+        }
+        
+        
+        // build interface
+        
+        // base handler
+        | contract object(message, c) = {
+
+        }
+
+        // composition interface
+        | contract @{*object | *privateMethod} = { }
+        | contract @{*object | "publicMethod"} = { }
+
+        // array interface
+        | contract @[*object, *privateMethod] = { }
+        | contract @[*object, "publicMethod"] = { }
+
+        // return constructed reference
+        return!(bundle+{*object})
+    }
+}

@@ -1,0 +1,82 @@
+new BulletinBoard in {
+    contract BulletinBoard(c) = {
+        new bb,
+            getIdentifier, getRead, getPost
+        in {
+            
+            getIdentifier!!(bundle0{bb})
+            | getRead!!(bundle-{*bb | "read"})
+            | getPost!!(bundle+{*bb | "post"})
+
+            | contract @{*bb | "post"}(@message,/* @count,*/ c) = {
+                new postID in {
+                    for (@bbPost <- getPost) {
+                        @{*bb | "read"}!!( message | @{*bbPost | "postID"}!(*postID) )
+                        | c!(*postID)
+                    }
+                    
+                }
+            }
+
+            
+            | for (@id <- getIdentifier; @read <- getRead; @post <- getPost ) {
+                c!(
+                    ["id", id] | 
+                    ["read", read] | 
+                    ["post", post]
+                )
+            }
+        }
+
+    }
+
+    new getBB in {
+        // create a new bullitin board
+        BulletinBoard!(*getBB)
+        | for ( @{
+            ["id", bbID] |
+            ["read", bbRead] |
+            ["post", bbPost]
+        } <- getBB ) {
+            // validate construction
+            new validateBB, stdout('rho:io:stdout') in {
+                // Validation Implementation 1 ::
+                // match @{bbID | "read"} == bbRead with true => {validateBB!(bbRead)}
+                // | match @{bbID | "post"} == bbPost with true => {validateBB!(bbPost)}
+                // | for (@{bbRead} <- validateBB; @{bbPost} <- validateBB) {
+                
+                // Validation Implementation 2 ::
+                // match @{bbID | "read"} == bbRead /\ @{bbID | "post"} == bbPost with { true => { validateBB!(true) }
+                // | for (true <- validateBB) {
+                
+                // Validation Implementation 3 ::
+                validateBB!( 
+                    { @{bbID | "read"} == bbRead } /\ 
+                    { @{bbID | "post"} == bbPost }
+                )
+                | for (true <- validateBB) {
+                    // construction is valid
+
+                    new getPostID in {
+
+                        // post message
+                        bbPost!("hello"!("world"), *getPostID)
+
+                        // fetch message by post ID
+                        | for (@postID <- getPostID) {
+                            for (@{ @{bbPost | "postID"}!(postID) | post }})
+                        }
+
+                        // listen to all "hello" messages
+                        | for (@{ post /\ { @"hello"!(who?) | _ } <= bbRead) {
+                            stdout!("Hello", who?) // "hello" "world"
+                            | match post with {
+                                // parse the rest of the post .. do something.
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

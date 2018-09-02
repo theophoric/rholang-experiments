@@ -1,0 +1,100 @@
+new Die in {
+    contract Die(@{facets /\ Integer}, c) = {
+        new die in {
+
+            // send all numbers from from 1-*facets to a channel, draw one
+            // HOW TO :: make sure that they all are generated at once ?
+
+            new getCount in {
+                for (@count <= getCount) {
+                    match { count <= facets } with {
+                        true => {
+                            die!!(count)
+                            | getCount!(count + 1)
+                        }
+                    }
+                }
+                | getCount!(1)
+            }
+
+            | c!(bundle-{*die})
+        }
+    }
+    | new makeDie in {
+        Die(17, *makeDie)
+        | for (die <- makeDie) {
+            for (@roll <- die) {
+                // random number between 1 and 17
+            }
+        }
+    }
+
+    // NOTE :: what does it mean to match this function ?  To send it ?  How can this pattern be used ?
+    // match input with { Die(17, *return) => { P } }
+}
+
+
+
+new rollDie in {
+    contract rollDie(@{ facetCount /\ Integer/* /\ > 0 */ }, c) = {
+        // TODO :: how to check that facetCount > 0 ?  spatial type in contract signature / match ?
+        new die, dieLoaded, getCounter in {
+
+            for (@counter <= getCounter) {
+                die!(counter)
+                | match { counter <= facetCount } with { 
+                    true => { getCounter!(counter + 1) }
+                    false => {dieLoaded!(Nil)}
+                }
+            }
+            | getCounter!(1)
+
+            for (_ <- dieLoaded; @roll <- die) { c!(roll) }
+        }
+    }
+
+    | new DiceStream in {
+        contract DiceStream(@facetCount, c) = {
+            new stream, die in {
+                for (@roll <= die) {
+                    stream!(roll)
+                    | rollDie(facetCount, *die)
+                }
+                | rollDie(facetCount, *die)
+                | c!(bundle-{*stream})
+            }
+        }
+
+        // Draw from dice stream
+        | new getStream, stdout('rho:io:stdout') in {
+            DiceStream(17, getStream)
+            | for (dice <- getStream) {
+                for (@roll <- dice) {
+                    stdout!(roll)
+                }
+            }
+        }
+    }
+
+}
+
+
+
+
+new die in {
+	die!!(1) | die!!(2) | die!!(3) | die!!(4) | die(5) | die!!(6)
+   | for (@roll <= die) {
+   	@"stdout"!(roll)
+   }
+}
+
+new roll6-Die in {
+    contract roll6-Die(c) = {
+        new die in {
+            die!(1) | die!(2) | die!(3) | die!(4) | die(5) | die!(6)
+            for (@roll <- die) {
+                c!(roll)
+            }
+        }
+    }
+}
