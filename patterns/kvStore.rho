@@ -1,0 +1,77 @@
+export KVStore in {
+    contract KVStore(c) = {
+        new this, getStore, getExport in {
+            // initialize Store with Nil object -- this is what default match will find
+            getStore!(Nil)
+            // export write-only interface
+            | getExport!(bundle+{*this})
+
+            | contract @(*this, "put")(key, @value, c) = {
+                for (@store <- getStore) {
+                    match store with {
+                        =key!(_) | _ => {
+                            getStore!(store)
+                            | c!(@"error"!("Key already exists"))
+                        }
+                        _ => {
+                            getStore!(store | key!(value))
+                        }
+                    }
+                }
+            }
+
+            | contract @(*this, "get")(key, c) = {
+                for (@store <! getStore) {
+                    | match store with {
+                        =key!(value) | _ /*rest*/ => {
+                            c!(value)
+                        }
+                        _ => {
+                            c!(Nil)
+                        }
+                    }
+                }
+            }
+            
+            | contract @(*this, "del")(key, c) = {
+                for (@store <- getStore) {
+                    match store with {
+                        =key!(_) | rest => {
+                            c!(true) | getStore!(rest)
+                        }
+                        _ => {
+                            c!(false) | getStore!(store)
+                        }
+                    }
+                }
+            }
+
+            | contract @(*this, "exists")(key, c) = {
+                for (@store <! getStore) {
+                    match store with {
+                        =key!(_) | _ /*rest*/ => {
+                            c!(true)
+                        }
+                        _ => {
+                            c!(false)
+                        }
+                    }
+                }
+            }
+
+            // | contract @(*this, "query")(@query, c) = {
+            //     for (@store <- getStore) {
+            //         match store with {
+            //             =query {}
+            //         }
+            //     }
+            // }
+
+            | for(@export <! getExport) {
+                c!(export)
+            }
+        }
+        
+
+    }
+}

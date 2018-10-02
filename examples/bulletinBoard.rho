@@ -1,4 +1,4 @@
-new BulletinBoard in {
+export BulletinBoard in {
     contract BulletinBoard(c) = {
         new bb,
             getIdentifier, getRead, getPost

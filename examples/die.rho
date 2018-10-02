@@ -1,4 +1,4 @@
-new Die in {
+export Die in {
     contract Die(@{facets /\ Integer}, c) = {
         new die in {
 
@@ -68,7 +68,7 @@ new rollDie in {
         // Draw from dice stream
         | new getStream, stdout('rho:io:stdout') in {
             DiceStream(17, getStream)
-            | for (dice <- getStream) {
+            | for (dice <= getStream) {
                 for (@roll <- dice) {
                     stdout!(roll)
                 }
@@ -83,9 +83,9 @@ new rollDie in {
 
 new die in {
 	die!!(1) | die!!(2) | die!!(3) | die!!(4) | die(5) | die!!(6)
-   | for (@roll <= die) {
-   	@"stdout"!(roll)
-   }
+    | for (@roll <= die) {
+        @"stdout"!(roll)
+    }
 }
 
 new roll6-Die in {

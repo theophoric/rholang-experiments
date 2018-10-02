@@ -1,7 +1,8 @@
 contract Constructor(@init, c) = {
-    new object, 
+    new object, // export
+        dispatch, internalDispatcher,
         privateMethod,
-        getExport, getPrivateVariable,
+        getExport, getPrivateVariable, 
         privateFunction
     in {
 
@@ -18,6 +19,15 @@ contract Constructor(@init, c) = {
         // base handler
         | contract object(message, c) = {
 
+        }
+
+        // dispatcher
+        | contract dispatch(message, c) = {
+            match message with {
+                [{ method /\ String}, input] => {
+                    @{*internalDispatcher | method}!(input, c)
+                }
+            }
         }
 
         // composition interface

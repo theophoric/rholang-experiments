@@ -22,7 +22,7 @@ contract @"BasicWallet"(@purse, @algorithm, @pk, return) = {
             nonceCh!(-1) |
             contract verify(@nonce, @amount, @retCh, @sig, return) = {
               for(@prevNonce <- nonceCh) {
-                if (nonce == (prevNonce + 1)) {
+                if (nonce == (prevNonce + 1)) { 
                   new result in {
                     @cryptoVerify!([nonce, amount, retCh].toByteArray(), sig.hexToBytes(), pk.hexToBytes(), *result) |
                     for(@r <- result) {
