@@ -9,7 +9,7 @@ export KVStore in {
             | contract @(*this, "put")(key, @value, c) = {
                 for (@store <- getStore) {
                     match store with {
-                        =key!(_) | _ => {
+                        =*key!(_) | _ => {
                             getStore!(store)
                             | c!(@"error"!("Key already exists"))
                         }
@@ -23,7 +23,7 @@ export KVStore in {
             | contract @(*this, "get")(key, c) = {
                 for (@store <! getStore) {
                     | match store with {
-                        =key!(value) | _ /*rest*/ => {
+                        =*key!(value) | _ /*rest*/ => {
                             c!(value)
                         }
                         _ => {
@@ -36,7 +36,7 @@ export KVStore in {
             | contract @(*this, "del")(key, c) = {
                 for (@store <- getStore) {
                     match store with {
-                        =key!(_) | rest => {
+                        =*key!(_) | rest => {
                             c!(true) | getStore!(rest)
                         }
                         _ => {
@@ -49,7 +49,7 @@ export KVStore in {
             | contract @(*this, "exists")(key, c) = {
                 for (@store <! getStore) {
                     match store with {
-                        =key!(_) | _ /*rest*/ => {
+                        =*key!(_) | _ /*rest*/ => {
                             c!(true)
                         }
                         _ => {
