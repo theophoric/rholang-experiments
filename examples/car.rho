@@ -1,0 +1,178 @@
+export Car in {
+    contract Car(c) = {
+        new this, // scope object
+            getExport, getKeyRegistry, getApprovedTransfer// state getters
+            initKey, // temporary state objects
+            isValidKey, isOwnerKey, isMasterKey, // internal / utility methods
+            print(`rho:io:stdout`) // powerbox interfaces
+        in {
+
+            // SET STATE "VARIABLES" //
+            
+            // initial keys is a single master key
+            getKeyRegistry!(@"master"!(*initKey))
+
+            // be explicit about what is being exported from the scope
+            | getExport!(
+                // Only export write-interface to scope object
+                @"car"!(bundle+{*this})
+                // Only EQ-key is needed, so that is what is provided
+                | @"key"!(bundle0{*initKey})
+            )
+
+            // Initial state object is Nil; this prevents a hanging "lookup"
+            | getApprovedTransfer!(Nil)
+
+
+            // UTILITY METHODS //
+
+            | contract isValidKey(@registry, @key, c) = {
+                match registry with {
+                    _!(=key) | _ => {
+                        c!(true)
+                    }
+                    _ => {
+                        c!(false)
+                    }
+                }
+            }
+
+            | contract isOwnerKey(@registry, @key, c) = {
+                match registry with {
+                    @{"master" \/ "spare"}!(=key) | _ => {
+                        c!(true)
+                    }
+                    _ => {
+                        c!(false)
+                    }
+                }
+            }
+
+            
+
+            | contract isMasterKey(@registry, @key, c) = {
+                match registry with {
+                    @"master"!(=key) | _ => {
+                        c!(true)
+                    }
+                    _ => {
+                        c!(false)
+                    }
+                }
+            }
+
+            // INTERFACE METHODS //
+
+            | contract @{*this | "start"}(@key, c) = {
+                for(@registry <! getKeyRegistry) {
+                    new validate in {
+                        isValidKey!(key, *validate)
+                        | for(@isValid <- validate) {
+                            match isValid with {
+                                true => {c!(@"message"!("vroom, vroom!"))}
+                                false => {c!(@"error"!("car won't start.. invalid key"))}
+                            }
+                        }
+                    }
+                }
+            }
+
+            | contract @{*this | "openGloveCompartment"}(@key, c) = {
+                for(@registry <! getKeyRegistry) {
+                    new validate in {
+                        isOwnerKey!(key, *validate)
+                        | for(@isValid <- validate) {
+                            match isValid with {
+                                true => {c!(@"message"!("oh look, gloves!"))}
+                                false => {c!(@"error"!("compartment won't open.. stop snooping, nosey valet!"))}
+                            }
+                        }
+                    }
+                }
+            }
+
+            | contract @{*this | "newKey"}(
+                @key,
+                @{keyType /\ {"master" \/ "spare" \/ "valet"}},
+                c
+            ) = {
+                for(@registry <- getKeyRegistry) {
+                    new validate in {
+                        isMasterKey!(key, *validate)
+                        | for(@isValid <- validate) {
+                            match isValid with {
+                                true => {
+                                    new newKey in {
+                                        getKeyRegistry!(keyType!(*newKey) | keys)
+                                        | c!(@"key"!(bundle0{*newKey}))
+                                    }
+                                }
+                                false => {
+                                    getKeyRegistry!(registry)
+                                    | c!(@"error"!("only a master key can forge new keys"))
+                                    
+                                }
+                            }
+                        }
+                        
+                    }
+                }
+            }
+
+            // NOTE :: it would be expected that the address is actually bundle0{*address}
+            | contract @{*this | "approveTransfer"}(@addressEQ, @key, c) = {
+                for(@registry <- getKeyRegistry) {
+                    new validate in {
+                        isMasterKey!(registry, key, (validate)
+                        | for(@isValid <- validate) {
+                            for(_ <- getApprovedTransfer) {
+                                // store approved transfer address
+                                getApprovedTransfer!(addressEQ)
+                                | c!(@"message"!("transfer approved for address"))
+                            }
+                        }
+                    }
+                }
+            }
+
+            | contract @{*this | "transfer"}(@address, c) = {
+                for(@approvedAddress <- getApprovedTransfer) {
+                    match address with {
+                        =approvedAddress => {
+                            // clear approved transfer variable
+                            getApprovedTransfer!(Nil)
+                            // create a new master key
+                            | new newMaster in {
+                                // clear existing registry and export
+                                for(_ <- getKeyRegistry; _ <- getExport) {
+                                    // set key registry to new master
+                                    getKeyRegistry!(@"master"!(*newMaster))
+                                    // new export
+                                    | getExport!(
+                                        @"car"!(bundle+{*this})
+                                        | @"key"!(bundle0{*newMaster})
+                                    )
+                                    // send new export object to address
+                                    | for(@export <! getExport) {
+                                        address!(export)
+                                        | c!(@"success"!("New master key sent to approved address"))
+                                    }
+                                }
+                            }
+                        }
+                        _ => {
+                            // re-set approved address
+                            getApprovedTransfer!(approvedAddress) |
+                            c!(@"error"!("Address not approved for transfer"))
+                        }
+                    }
+                }
+            }
+
+            // export interface object and key
+            | for (@export <! getExport) {
+                c!(export)
+            }
+        }
+    }
+}
