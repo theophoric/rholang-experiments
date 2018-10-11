@@ -119,6 +119,22 @@ export Car in {
                 }
             }
 
+            | contract @{*this | "revokeKey"}(@key, c) = {
+                for(@registry <- getKeyRegistry) {
+                    match registry with {
+                        _!(=key) | rest => {
+                            getKeyRegistry!(rest)
+                            | c!(@"success"!("key revoked"))
+                        }
+                        _ => {
+                            c!(@"error"!("Key does not exist"))
+                        }
+                    }
+                }
+            }
+
+
+
             // NOTE :: it would be expected that the address is actually bundle0{*address}
             | contract @{*this | "approveTransfer"}(@addressEQ, @key, c) = {
                 for(@registry <- getKeyRegistry) {

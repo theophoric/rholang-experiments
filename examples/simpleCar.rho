@@ -1,0 +1,27 @@
+export SimpleCar in {
+    contract SimpleCar(c) = {
+        new this, getExport, validKeys
+        in {
+            validKeys!(Nil)
+
+            contract registerKey(@key, c) = {
+
+            }
+
+            contract revokeKey(@key, v) = {
+
+            }
+            
+            contract this(@method, @key, v) = {
+
+            }
+
+            contract makeValetKey(c) = {
+                
+            }
+            
+
+            c!(bundle+{*this})
+        }
+    }
+}

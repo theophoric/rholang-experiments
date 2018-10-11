@@ -1,0 +1,103 @@
+export Forwarder in {
+    contract Forwarder(@process, c) = {
+        new this, getExport,
+            getValidTokens
+        in {
+            getExport!(bundle+{*this})
+            | getValidTokens!(Nil)
+
+            | contract createForwarder(@allowedMethods, c) = {
+                new token, revokeForwarder in {
+                    contract token(@method, @message, c) = {
+                        for (@validTokens <! getValidTokens) {
+                            match validTokens with {
+                                =*token | _ => {
+                                    match allowedMethods {
+                                        =method | _ => {
+                                            process!(method, message, *c)
+                                            // or @{*scope | method}!(message, c)
+                                        }
+                                        _ => {
+                                            c!(@"error"!("invalid token / token has been revoked"))
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    | contract revokeForwarder(c) = {
+                        for(@{=*token | rest} <- getValidTokens) {
+                            getValidTokens!(rest)
+                        }
+                    }
+                    | for(@tokens <- getValidTokens) {
+                        getValidTokens!(*token | tokens)
+                    }
+                    | c!(*token,*revokeForwarder)
+                }
+            }
+
+            contract this(@method, @message, c) = {
+                match method with {
+                    "createForwarder" => {createForwarder!(message, *c)}
+                    _ => {c!("error"!("undefined method"))}
+                }
+            }
+
+            
+            | for(@export <- getExport) {
+                c!(export)
+            }
+        }
+    }
+}
+
+
+import Forwarder in {
+    new Car in {
+        contract Car(c) = {
+            new this,
+                unlock, start
+            in {
+                contract this(@method, @message, c) ={
+                    match method with {
+                        "unlock" => {unlock!(*c)}
+                        "start" => {start!(*c)}
+                        "unlockGloveCompartment" => {unlockGloveCompartment!(*c)}
+                        _ => {c!(@"error"!("unlisted method"))}
+                    }
+                }
+                contract unlock(c) = {
+                    c!(@"message"!("beep beep"))
+                }
+
+                contract start(c) = {
+                    c!(@"message"!("vroom vroom"))
+                }
+
+                contract unlockGloveCompartment(c) = {
+                    c!(@"message"!("look, gloves!"))
+                }
+
+                c!(bundle+{*this})
+            }
+        }
+    }
+    | new getCar, getForwarder in {
+        Car!(*getCar) 
+        | for(@car <- getCar) {
+            Forwarder(car, *getForwarder)
+            | for(forwarder <- getForwarder) {
+                new getValetToken, getOwnerToken in {
+                    forwarder!("createForwarder", {"unlock" | "start"}, *getValetToken)
+                    | forwarder!("createForwarder", {"unlock" | "start" | "openGloveCompartment"}, *getOwnerToken)
+                    | for(valetToken <- getValetToken; ownerToken <- getOwnerToken) {
+                        // valetKey!("start", c)
+                    }
+                }
+                
+            }
+        }
+        
+    }
+}
