@@ -20,14 +20,28 @@ export KVStore in {
                 }
             }
 
+            | contract @(*this, "patch")(key, @value, c) = {
+                for (@store <- getStore) {
+                    match store with {
+                        =*key!(_) | rest => {
+                            getStore!(key!(value) | rest)
+                        }
+                        _ => {
+                            getStore!(store)
+                            | c!(@"error"!("Key does not exist"))
+                        }
+                    }
+                }
+            }
+
             | contract @(*this, "get")(key, c) = {
                 for (@store <! getStore) {
                     | match store with {
-                        =*key!(value) | _ /*rest*/ => {
+                        =*key!(value) | _ => {
                             c!(value)
                         }
                         _ => {
-                            c!(Nil)
+                            c!(@"error"!("Key does not exist"))
                         }
                     }
                 }

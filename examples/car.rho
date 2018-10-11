@@ -176,3 +176,24 @@ export Car in {
         }
     }
 }
+
+import Car in {
+    new makeCar in {
+        Car(*makeCar)
+        | for(@{@"car"!(myCar) | @"key"!(masterKey)} <- makeCar) {
+
+            // start car
+
+            // open glove compartment
+
+            // make a new key
+
+            // make a new transfer address
+            // approve transfer address
+            // transfer to approved address
+
+
+
+        }
+    }
+}
