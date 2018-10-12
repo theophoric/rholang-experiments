@@ -82,7 +82,7 @@ new rollDie in {
 
 
 new die in {
-	die!!(1) | die!!(2) | die!!(3) | die!!(4) | die(5) | die!!(6)
+	die!!(1) | die!!(2) | die!!(3) | die!!(4) | die!!(5) | die!!(6)
     | for (@roll <= die) {
         @"stdout"!(roll)
     }
@@ -91,7 +91,7 @@ new die in {
 new roll6-Die in {
     contract roll6-Die(c) = {
         new die in {
-            die!(1) | die!(2) | die!(3) | die!(4) | die(5) | die!(6)
+            die!(1) | die!(2) | die!(3) | die!(4) | die!(5) | die!(6)
             for (@roll <- die) {
                 c!(roll)
             }

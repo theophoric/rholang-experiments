@@ -1,0 +1,25 @@
+/*
+	Auth :: 
+
+	An auth instance can control access to many objects.
+
+	Can register an object, and then create control tokens around it
+
+	A token grants access to an 
+
+	IDEALLY :: would want to encode "roles" as a pattern-match against a message.
+	e.g. message has structure:
+	{
+		@"method"!({"get" \/ "set"}) |
+		@"input"!({@"variable"!({"var_a" \/ "var_b" \/ "var_c"})} | @"value"!(_)) 
+	}
+
+*/
+
+new Auth in {
+	contract Auth(object, c) = {
+		new this in {
+			contract @{*this | }
+		}
+	}
+}

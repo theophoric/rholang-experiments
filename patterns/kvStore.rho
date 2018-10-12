@@ -1,4 +1,4 @@
-export KVStore in {
+new KVStore in {
     contract KVStore(c) = {
         new this, getStore, getExport in {
             // initialize Store with Nil object -- this is what default match will find
@@ -8,8 +8,8 @@ export KVStore in {
 
             | contract @(*this, "put")(key, @value, c) = {
                 for (@store <- getStore) {
-                    match store with {
-                        =*key!(_) | _ => {
+                    match store {
+                        {@=*key!(_) | _} => {
                             getStore!(store)
                             | c!(@"error"!("Key already exists"))
                         }
@@ -22,8 +22,8 @@ export KVStore in {
 
             | contract @(*this, "patch")(key, @value, c) = {
                 for (@store <- getStore) {
-                    match store with {
-                        =*key!(_) | rest => {
+                    match store {
+                        {@=*key!(_) | rest} => {
                             getStore!(key!(value) | rest)
                         }
                         _ => {
@@ -35,9 +35,10 @@ export KVStore in {
             }
 
             | contract @(*this, "get")(key, c) = {
-                for (@store <! getStore) {
-                    | match store with {
-                        =*key!(value) | _ => {
+                for (@store <- getStore) {
+                    getStore!(store)
+                    | match store {
+                        {@=*key!(value) | _} => {
                             c!(value)
                         }
                         _ => {
@@ -49,8 +50,8 @@ export KVStore in {
             
             | contract @(*this, "del")(key, c) = {
                 for (@store <- getStore) {
-                    match store with {
-                        =*key!(_) | rest => {
+                    match store {
+                        {@=*key!(_) | rest} => {
                             c!(true) | getStore!(rest)
                         }
                         _ => {
@@ -61,9 +62,10 @@ export KVStore in {
             }
 
             | contract @(*this, "exists")(key, c) = {
-                for (@store <! getStore) {
-                    match store with {
-                        =*key!(_) | _ /*rest*/ => {
+                for (@store <- getStore) {
+                    getStore!(store)
+                    | match store {
+                        {@=*key!(_) | _ /*rest*/} => {
                             c!(true)
                         }
                         _ => {
@@ -75,13 +77,13 @@ export KVStore in {
 
             // | contract @(*this, "query")(@query, c) = {
             //     for (@store <- getStore) {
-            //         match store with {
+            //         match store {
             //             =query {}
             //         }
             //     }
             // }
 
-            | for(@export <! getExport) {
+            | for(@export <- getExport) {
                 c!(export)
             }
         }

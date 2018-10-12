@@ -1,19 +1,56 @@
-export Forwarder in {
+new SimpleForwarder in {
+    contract SimpleForwarder(process, c) = {
+        new forwarder, getStatus, revoke
+        in {
+            getStatus!(true)
+            
+            | contract forwarder(@message, c) = {
+                for(@isValid <- getStatus) {
+                    getStatus!(isValid)
+                    | match isValid {
+                        true => {
+                            process!(message, *c)
+                        }
+                        false => {
+                            c!(Nil)
+                        }
+                    }
+                }
+            }
+
+
+            | contract revoke(c) = {
+                for(_ <- getStatus) {
+                    getStatus!(false)
+                    | c!(true)
+                }
+            }
+            
+        }
+        // return revoke
+        | c!(bundle+{*forwarder}, bundle+{*revoke})
+    }
+}
+
+
+new Forwarder in {
     contract Forwarder(@process, c) = {
         new this, getExport,
-            getValidTokens
+            getValidTokens,
+            createToken
         in {
             getExport!(bundle+{*this})
             | getValidTokens!(Nil)
 
-            | contract createForwarder(@allowedMethods, c) = {
-                new token, revokeForwarder in {
+            | contract createToken(@allowedMethods, c) = {
+                new token, revokeToken in {
                     contract token(@method, @message, c) = {
-                        for (@validTokens <! getValidTokens) {
-                            match validTokens with {
-                                =*token | _ => {
+                        for (@validTokens <- getValidTokens) {
+                            getValidTokens!(validTokens)
+                            | match validTokens  {
+                                {=*token | _} => {
                                     match allowedMethods {
-                                        =method | _ => {
+                                        {=method | _} => {
                                             process!(method, message, *c)
                                             // or @{*scope | method}!(message, c)
                                         }
@@ -25,22 +62,28 @@ export Forwarder in {
                             }
                         }
                     }
-                    | contract revokeForwarder(c) = {
+                    | contract revokeToken(c) = {
                         for(@{=*token | rest} <- getValidTokens) {
                             getValidTokens!(rest)
+                            | c!(true)
                         }
                     }
+                    
+                    // register token
                     | for(@tokens <- getValidTokens) {
                         getValidTokens!(*token | tokens)
                     }
-                    | c!(*token,*revokeForwarder)
+                    
+                    // return token and revokeToken
+                    | c!(bundle+{*token}, bundle+{*revokeToken})
                 }
             }
 
-            contract this(@method, @message, c) = {
-                match method with {
-                    "createForwarder" => {createForwarder!(message, *c)}
-                    _ => {c!("error"!("undefined method"))}
+            // method dispatch
+            | contract this(@method, @message, c) = {
+                match method {
+                    "createToken" => { createToken!(message, *c)}
+                    _ => { c!(@"error"!("undefined method")) }
                 }
             }
 
@@ -91,8 +134,22 @@ import Forwarder in {
                 new getValetToken, getOwnerToken in {
                     forwarder!("createForwarder", {"unlock" | "start"}, *getValetToken)
                     | forwarder!("createForwarder", {"unlock" | "start" | "openGloveCompartment"}, *getOwnerToken)
-                    | for(valetToken <- getValetToken; ownerToken <- getOwnerToken) {
-                        // valetKey!("start", c)
+                    | for(valetToken, valetTokenRevoke <- getValetToken; ownerToken, valetTokenRevoke <- getOwnerToken) {
+                        valetTokenRevoke!(Nil)
+                        | valetKey!("unlock", c)
+                        | for (@response <- c) {
+                            match response with {
+                                @"error"!(errMessage) => {
+                                    
+                                }
+                                @"success"!(successMessage) => {
+
+                                }
+                            }
+                        }
+
+                        
+
                     }
                 }
                 
