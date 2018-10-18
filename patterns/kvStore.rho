@@ -9,12 +9,12 @@ new KVStore in {
             | contract @(*this, "put")(key, @value, c) = {
                 for (@store <- getStore) {
                     match store {
-                        {@=*key!(_) | _} => {
+                        {@=*key!(_) | _ } => {
                             getStore!(store)
                             | c!(@"error"!("Key already exists"))
                         }
                         _ => {
-                            getStore!(store | key!(value))
+                            getStore!(store | key!(value)) // @(*this, "put")!("myVal", 42, *putVar) ::> getStore!(Nil|@"myVal"!(42) | @"myVal"!(42)| @"myVal"!(42) | @secretKey!(@"complexData"!("a") | 42))
                         }
                     }
                 }
@@ -90,4 +90,5 @@ new KVStore in {
         
 
     }
+
 }

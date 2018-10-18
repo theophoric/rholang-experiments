@@ -44,6 +44,7 @@ new Forwarder in {
 
             | contract createToken(@allowedMethods, c) = {
                 new token, revokeToken in {
+
                     contract token(@method, @message, c) = {
                         for (@validTokens <- getValidTokens) {
                             getValidTokens!(validTokens)

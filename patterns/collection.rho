@@ -1,0 +1,184 @@
+
+
+// collection constructor
+new Collection in {
+
+    for(c <= Collection) {
+        Collection!(Nil, *c)
+    }   
+
+    for(@initialItems, c <= Collection) {
+        new interface,
+            getState,
+            exists, add, remove, map
+        in {
+            c!(bundle+{ *interface })
+            | getState!(Nil)
+            
+
+            // PUBLIC "METHODS"
+            | for (c <= interface) {
+                for(@state <- getState) {
+                    getState!(state)
+                    | c!(state)
+                    
+                }
+            }
+            
+            | for (@items, c <= @{*interface | "add"}) {
+                for(@state <- getState) {
+                    new doAdd in {
+                        add!(state, items, *doAdd) 
+                        | for (@newState <- doAdd) {
+                            getState!(newState)
+                            | c!(newState)
+                        }
+                    }
+                }
+            }
+
+            | for (@items, c <= @{*interface | "remove"}) {
+                for(@state <- getState) {
+                    new doRemove in {
+                        remove!(state, items, *doRemove)
+                        | for (@result <- doRemove) {
+                            match result {
+                                @"error"!(message) => {
+                                    // handle error ? or..
+                                    // put original state back
+                                    getState!(state)
+                                    | c!(result)
+                                }
+                                newState => {
+                                    // all done.
+                                    getState!(newState)
+                                    | c!(newState)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            
+
+            // INTERNAL "METHODS"
+
+            // Add items to collection
+            | for(@collection, @items, c <= add)
+                match items with {
+                    item | rest => {
+                        add!(item | collection, rest, *c)
+                    }
+                    Nil => {
+                        c!(collection)
+                    }
+                }
+            }
+
+            // remove items from collection
+            for(@collection, @items, c <= remove) {
+                match items with {
+                    item | restItems => {
+                        match collection with {
+                            { =item | restCollection } => {
+                                remove!(restCollection, restItems, *c)
+                            }
+                            Nil => {
+                                // collection is empty
+                                // nothing to remove, so return Nil to continuation.
+                                c!(Nil)
+                            }
+                            _ => {
+                                // item does not exist in collection
+                                // skip item
+                                remove!(collection, restItems, *c)
+                                
+                                // OR :: throw error?
+                                // c!(@"error"!("invalid input"))
+                            }
+                        }
+                    }
+                    Nil => {
+                        c!(Nil)
+                    }
+                    _ => {
+                        // this state only happens with invalid input
+                        c!(@"error"!("invalid input"))
+                    }
+                }
+            }
+
+            | for (@process, c <= @{*interface | "map"}) {
+                for(@state <- getState) {
+                    new doMap in {
+                        map!(state, items, *doMap)
+                        | for (@result <- doMap) {
+                            match result {
+                                @"error"!(message) => {
+                                    // handle error ? or..
+                                    getState!(state)
+                                    | c!(result)
+                                }
+                                newState => {
+                                    // all done.
+                                    getState!(newState)
+                                    | c!(Nil)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+    
+            | for(@collection, process, promises, c <= map) {
+                match collection with {
+                    item | rest => {
+                        new doProcess in {
+                            process!(item, *doProcess)
+                            | for ()
+
+                        }
+                    }
+                }
+            }
+            
+            | for (@promises, c <= resolvePromises) {
+                
+            }
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+//    new iterate in {
+//      contract iterate(@list, process, done) = {
+//        match list {
+//          [hd, ...tl] => {
+//            new ack in {
+//              process!(hd, *ack) |
+//              for (_ <- ack) { iterate!(tl, *process, *done) }
+//            }
+//          }
+//          _ => done!(Nil)
+//        }
+//      } |
+//      new process, done in {
+//        iterate!([4,5,6], *process, *done) |
+//        contract process(@item, ack) = {
+//          /* handle processing of item */
+//          ack!(Nil)
+//        } |
+//        for (_ <- done) {
+//          /* done! */
+//          Nil
+//        }
+//      }
+//    }
